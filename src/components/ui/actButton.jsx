@@ -2,7 +2,7 @@ import { cn } from "../../lib/Utils";
 import { clickable } from '../../lib/Styles';
 
 // Small text button under a reply (Copy, Save, Listen...). On very small screens only the icon is shown.
-export default function actionButton({ className, ...props }) {
+export default function actButton({ className, ...props }) {
   return (
     <button
       className={cn(
