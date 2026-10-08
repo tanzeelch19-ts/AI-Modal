@@ -4,7 +4,7 @@ import { cn } from '../../lib/Utils';
 
 // Thumbnail of an attached image / video / file. size: 'sm' (composer) or 'lg' (inside a message).
 // Pass onRemove to show the small X button.
-export default function attachmentCard({ att, size = 'sm', onRemove }) {
+export default function attachCard({ att, size = 'sm', onRemove }) {
   return (
     <div
       title={att.name}
