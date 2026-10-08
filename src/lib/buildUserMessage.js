@@ -1,4 +1,4 @@
-import { MAX_IMG } from "./constants";
+import { MAX_IMG } from "./Const.js";
 import { uid } from './Utils.js';
 
 // Build the message object saved in the chat from the typed text + pending attachments.
