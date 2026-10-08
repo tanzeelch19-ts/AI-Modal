@@ -16,7 +16,7 @@ function NavButton({ active, icon: Icon, children, ...props }) {
   );
 }
 
-export default function SideBar({ open, view, chats, cur, onClose, onNewChat, onOpenView, onOpenChat, onDeleteChat }) {
+export default function sideBars({ open, view, chats, cur, onClose, onNewChat, onOpenView, onOpenChat, onDeleteChat }) {
   return (
     <>
       {open && <div className="fixed inset-0 z-20 bg-black/50 min-[721px]:hidden" onClick={onClose} />}
