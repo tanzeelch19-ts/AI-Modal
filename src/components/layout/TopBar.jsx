@@ -1,5 +1,5 @@
 import { Menu, Moon, Sun } from 'lucide-react';
-import IconButton from '../ui/Iconbutton';
+import iconButton from '../ui/iconButton';
 
 export default function TopBar({ title, theme, onMenu, onToggleTheme }) {
   return (
