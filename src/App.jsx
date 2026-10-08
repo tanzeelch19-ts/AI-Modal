@@ -9,13 +9,13 @@ import Toast from './components/ui/Toast';
 import TopBar from './components/layout/TopBar';
 import UsageView from './components/views/UsageView';
 import { useAttachments } from './hooks/useAttachments';
-import { useAutoScroll } from './lib/useAutoScroll';
+import { AutoScroll } from './lib/AutoScroll';
 import { useChat } from './hooks/useChat';
-import { useLocalStorage } from './lib/UseLocalStorage';
+import { LocalStorage } from './lib/LocalStorage';
 import { useOnlineStatus } from './lib/useOnlineStatus'
 import { useTheme } from './hooks/useTheme';
 import { useToast } from './hooks/useToast';
-import { useVoiceInput } from './hooks/UseVoiceInput';
+import { voiceInput } from './hooks/VoiceInput';
 import { buildUserMessage } from './lib/buildUserMessage';
 import { scrollbar } from './lib/Styles';
 import { cn , copyText, speak } from './lib/Utils';

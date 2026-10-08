@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { UseLocalStorage } from '../lib/UseLocalStorage';
+import { UseLocalStorage } from '../lib/LocalStorage';
 import { streamChat } from '../lib/Api';
 import { toApi } from '../lib/buildUserMessage';
 import { uid } from '../lib/Utils';

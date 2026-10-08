@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 // Keep the scrolling area at the bottom, unless the user has scrolled up to read.
-export function useAutoScroll(ref, deps) {
+export function AutoScroll(ref, deps) {
   useEffect(() => {
     const el = ref.current;
     if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 160) el.scrollTop = el.scrollHeight;

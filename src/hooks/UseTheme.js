@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { UseLocalStorage } from '../lib/UseLocalStorage';
+import { UseLocalStorage } from '../lib/LocalStorage';
 
 export function useTheme() {
   const [theme, setTheme] = useLocalStorage('devai:theme', matchMedia('(prefers-color-scheme:light)').matches ? 'light' : 'dark');

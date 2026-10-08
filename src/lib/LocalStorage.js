@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 // Like useState, but the value is saved in localStorage under `key`.
 // Saving is delayed a little (debounced) so a streaming reply, which changes the value
 // many times per second, does not re-write all chats to storage on every update.
-export function UseLocalStorage(key, init) {
+export function LocalStorage(key, init) {
   const [v, setV] = useState(() => {
     try {
       const s = localStorage.getItem(key);
