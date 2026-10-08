@@ -1,0 +1,58 @@
+/*
+  Tailwind setup only - all styling lives in the Tailwind classes inside the .jsx files.
+  (In Tailwind v4 this file is where the "config" lives: colors, fonts, extra variants.)
+*/
+@import "tailwindcss";
+
+/* Theme colors. Dark by default; light when <html data-theme="light"> (set in hooks/useTheme.js) */
+:root {
+  --bg: #0b0e14;
+  --side: #0f131b;
+  --panel: #161b26;
+  --line: #232b3b;
+  --text: #e8ecf5;
+  --mute: #8793ad;
+  --acc: #34d399;
+  --err: #ff7a7a;
+  --gfg: #06281c;
+}
+:root[data-theme='light'] {
+  --bg: #f6f7fb;
+  --side: #ffffff;
+  --panel: #eceff7;
+  --line: #d5daea;
+  --text: #1a2033;
+  --mute: #5d6783;
+  --acc: #0e9f6e;
+  --err: #c93a3a;
+}
+
+/* Gives class names: bg-app, bg-side, bg-panel, border-line, text-ink, text-mute, text-acc, text-err, text-gfg */
+@theme inline {
+  --color-app: var(--bg);
+  --color-side: var(--side);
+  --color-panel: var(--panel);
+  --color-line: var(--line);
+  --color-ink: var(--text);
+  --color-mute: var(--mute);
+  --color-acc: var(--acc);
+  --color-err: var(--err);
+  --color-gfg: var(--gfg);
+}
+
+/* Fonts (font-sans, font-mono) and the typing-dots animation (animate-dot) */
+@theme {
+  --font-sans: Sora, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --animate-dot: dot 1s infinite;
+  @keyframes dot {
+    50% {
+      transform: translateY(-5px);
+      opacity: 0.4;
+    }
+  }
+}
+
+/* Small-screen variants: mobile:... (up to 720px) and tiny:... (up to 420px) */
+@custom-variant mobile (@media (max-width: 720px));
+@custom-variant tiny (@media (max-width: 420px));
