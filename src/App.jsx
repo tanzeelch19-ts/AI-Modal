@@ -11,11 +11,11 @@ import UsageView from './components/views/UsageView';
 import { useAttachments } from './hooks/useAttachments';
 import { useAutoScroll } from './lib/useAutoScroll';
 import { useChat } from './hooks/useChat';
-import { useLocalStorage } from './lib/useLocalStorage';
+import { useLocalStorage } from './lib/UseLocalStorage';
 import { useOnlineStatus } from './lib/useOnlineStatus'
 import { useTheme } from './hooks/useTheme';
 import { useToast } from './hooks/useToast';
-import { useVoiceInput } from './hooks/useVoiceInput';
+import { useVoiceInput } from './hooks/UseVoiceInput';
 import { buildUserMessage } from './lib/buildUserMessage';
 import { scrollbar } from './lib/Styles';
 import { cn , copyText, speak } from './lib/Utils';
