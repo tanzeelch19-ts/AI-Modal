@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { useLocalStorage } from '../lib/useLocalStorage';
 import { streamChat } from '../lib/Api';
 import { toApi } from '../lib/buildUserMessage';
-import { uid } from '../lib/utils';
+import { uid } from '../lib/Utils';
 
 
 // Everything about conversations: list, current chat, sending, streaming, regenerate, delete, usage.
