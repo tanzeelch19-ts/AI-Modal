@@ -13,7 +13,7 @@ import { AutoScroll } from './lib/AutoScroll';
 import { useChat } from './hooks/useChat';
 import { LocalStorage } from './lib/LocalStorage';
 import { useOnlineStatus } from './lib/useOnlineStatus'
-import { useTheme } from './hooks/useTheme';
+import { Theme } from './hooks/Theme';
 import { useToast } from './hooks/useToast';
 import { voiceInput } from './hooks/VoiceInput';
 import { buildUserMessage } from './lib/buildUserMessage';
