@@ -4,14 +4,14 @@ import EmptyState from './components/chat/EmptyState';
 import MessageList from './components/chat/MessageList';
 import OfflineBanner from './components/layout/OfflineBanner';
 import SavedView from './components/views/SavedView';
-import Sidebar from './components/layout/Sidebar';
+import Sidebar from './components/layout/sideBar';
 import Toast from './components/ui/Toast';
 import TopBar from './components/layout/TopBar';
 import UsageView from './components/views/UsageView';
-import { useAttachments } from './hooks/useattachments';
-import { useAutoScroll } from './lib/Useautoscroll';
+import { useAttachments } from './hooks/useAttachments';
+import { useAutoScroll } from './lib/useAutoScroll';
 import { useChat } from './hooks/useChat';
-import { useLocalStorage } from './lib/Uselocalstorage';
+import { useLocalStorage } from './lib/UseLocalStorage';
 import { useOnlineStatus } from './lib/useOnlineStatus'
 import { useTheme } from './hooks/UseTheme';
 import { useToast } from './hooks/useToast';

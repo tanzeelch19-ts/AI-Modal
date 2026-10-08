@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
-import { clickable, scrollbar } from '../../lib/styles';
-import { cn, copyText } from '../../lib/utils';
+import {  clickable, scrollbar  } from '../../lib/Styles';
+import { cn,copyText } from '../../lib/Utils';
 
 // Replaces <pre> in markdown: language label + Copy button above the code.
 export default function CodeBlock({ children }) {

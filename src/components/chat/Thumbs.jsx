@@ -1,4 +1,4 @@
-import AttachmentCard from './AttachmentCard.jsx';
+import AttachmentCard from './attachmentCard.jsx';
 
 // Attachments shown inside a sent message.
 export default function Thumbs({ att }) {
