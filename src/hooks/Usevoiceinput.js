@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 
 // Speech-to-text into the message box (Chrome / Edge).
-export function UseVoiceInput({ input, setInput, toast }) {
+export function UsevoiceInput({ input, setInput, toast }) {
   const [listening, setListening] = useState(false);
   const recRef = useRef(null);
 

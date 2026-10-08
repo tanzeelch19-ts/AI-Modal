@@ -15,7 +15,7 @@ import { useLocalStorage } from './lib/UseLocalStorage';
 import { useOnlineStatus } from './lib/useOnlineStatus'
 import { useTheme } from './hooks/UseTheme';
 import { useToast } from './hooks/useToast';
-import { useVoiceInput } from './hooks/UseVoiceInput';
+import { useVoiceInput } from './hooks/UsevoiceInput';
 import { buildUserMessage } from './lib/buildUserMessage';
 import { scrollbar } from './lib/Styles';
 import { cn , copyText, speak } from './lib/Utils';
