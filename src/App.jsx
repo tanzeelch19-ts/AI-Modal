@@ -4,7 +4,7 @@ import EmptyState from './components/chat/EmptyState';
 import MessageList from './components/chat/MessageList';
 import OfflineBanner from './components/layout/OfflineBanner';
 import SavedView from './components/views/SavedView';
-import Sidebar from './components/layout/sideBar';
+import Sidebar from './components/layout/SideBar';
 import Toast from './components/ui/Toast';
 import TopBar from './components/layout/TopBar';
 import UsageView from './components/views/UsageView';
