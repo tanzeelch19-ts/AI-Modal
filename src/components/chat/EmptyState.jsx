@@ -1,4 +1,4 @@
-import { PROMPTS } from '../../lib/Constants';
+import { PROMPTS } from '../../lib/constant';
 import { clickable } from '../../lib/Styles';
 import { cn } from '../../lib/Utils';
 export default function EmptyState({ onPick }) {
