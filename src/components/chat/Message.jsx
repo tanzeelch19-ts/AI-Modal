@@ -1,5 +1,5 @@
 import { Bookmark, Copy, RefreshCw, Sparkles, Volume2 } from 'lucide-react';
-import ActionButton from '../ui/ActButtons';
+import ActionButton from '../ui/ActionButton.jsx';
 import Markdown from '../markdown/Markdown.jsx';
 import Thumbs from './Thumbs.jsx';
 import { brandGradient } from '../../lib/Styles.js';
