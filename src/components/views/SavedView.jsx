@@ -1,5 +1,5 @@
 import { Copy, X } from 'lucide-react';
-import actionButton from '../ui/actionButton';
+import ActionButton from '../ui/ActionButton';
 import Card from '../ui/Card';
 import Markdown from '../markdown/Markdown';
 

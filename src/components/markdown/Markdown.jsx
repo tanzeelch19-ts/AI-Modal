@@ -2,7 +2,7 @@ import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import CodeBlock from './Codeblock.jsx';
-import { focusRing, scrollbar } from '../../lib/Styles';
+import { focusRing, scrollbar } from '../../lib/Styles.js';
 import { cn } from '../../lib/Utils.js';
 
 // Makes a markdown element (p, ul, ...) that carries Tailwind classes.
