@@ -15,14 +15,14 @@ import { LocalStorage } from './lib/LocalStorage';
 import { useOnlineStatus } from './lib/useOnlineStatus'
 import { Theme } from './hooks/Theme';
 import { useToast } from './hooks/useToast';
-import { voiceInput } from './hooks/VoiceInput';
+import { VoiceInput } from './hooks/VoiceInput';
 import { buildUserMessage } from './lib/buildUserMessage';
 import { scrollbar } from './lib/Styles';
 import { cn , copyText, speak } from './lib/Utils';
 
 export default function App() {
-  const [theme, toggleTheme] = useTheme();
-  const [saved, setSaved] = useLocalStorage('devai:saved', []);
+  const [theme, toggleTheme] = Theme();
+  const [saved, setSaved] = LocalStorage('devai:saved', []);
   const [view, setView] = useState('chat'); // 'chat' | 'saved' | 'usage'
   const [menu, setMenu] = useState(false);  // sidebar open on phones
   const [input, setInput] = useState('');
@@ -33,9 +33,9 @@ export default function App() {
   const online = useOnlineStatus(() => toast('Back online.'));
   const { chats, chat, cur, usage, busy, send, regenerate, deleteChat, stop, selectChat, startNewChat } = useChat();
   const { pending, addFiles, removeAt, clear } = useAttachments(toast);
-  const { listening, toggleMic } = useVoiceInput({ input, setInput, toast });
+  const { listening, toggleMic } = VoiceInput({ input, setInput, toast });
 
-  useAutoScroll(listRef, [chat?.msgs, view]);
+  AutoScroll(listRef, [chat?.msgs, view]);
 
   const msgs = chat?.msgs || [];
 

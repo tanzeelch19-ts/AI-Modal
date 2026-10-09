@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { UseLocalStorage } from '../lib/LocalStorage';
+import { LocalStorage } from '../lib/LocalStorage';
 import { streamChat } from '../lib/Api';
 import { toApi } from '../lib/buildUserMessage';
 import { uid } from '../lib/Utils';
@@ -7,9 +7,9 @@ import { uid } from '../lib/Utils';
 
 // Everything about conversations: list, current chat, sending, streaming, regenerate, delete, usage.
 export function useChat() {
-  const [chats, setChats] = useLocalStorage('devai:chats', []);
-  const [cur, setCur] = useLocalStorage('devai:cur', null);
-  const [usage, setUsage] = useLocalStorage('devai:usage', { n: 0, in: 0, out: 0 });
+  const [chats, setChats] = LocalStorage('devai:chats', []);
+  const [cur, setCur] = LocalStorage('devai:cur', null);
+  const [usage, setUsage] = LocalStorage('devai:usage', { n: 0, in: 0, out: 0 });
   const [busy, setBusy] = useState(false);
   const blobs = useRef({});      // message id -> base64 images (memory only)
   const abortRef = useRef(null);

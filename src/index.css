@@ -4,7 +4,7 @@
 */
 @import "tailwindcss";
 
-/* Theme colors. Dark by default; light when <html data-theme="light"> (set in hooks/useTheme.js) */
+/* Theme colors. Dark by default; light when <html data-theme="light"> (set in hooks/Theme.js) */
 :root {
   --bg: #0b0e14;
   --side: #0f131b;
