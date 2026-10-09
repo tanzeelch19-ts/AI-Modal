@@ -3,7 +3,7 @@
 //   devai:chat:<id>  -> [messages]           one key per conversation, read only when you open it.
 //   devai:usage      -> { n, in, out }
 // Saving one chat never re-writes the others, so history stays fast even with hundreds of chats.
-import { quickTitle, uniqueTitle } from './chatTitle.js';
+import { quickTitle, uniqueTitle } from './chatTitles';
 
 export const INDEX_KEY = 'devai:index';
 const CHAT = 'devai:chat:';

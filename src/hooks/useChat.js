@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { LocalStorage } from '../lib/LocalStorage';
+import { fetchAiTitle, quickTitle, uniqueTitle } from '../lib/chatTitles';
+import {INDEX_KEY, loadChat, loadIndex, loadUsage, removeChat, removeEntry, saveChat, saveUsage, upsertEntry } from '../lib/Chatstore.js';
 import { streamChat } from '../lib/Api';
 import { toApi } from '../lib/buildUserMessage';
 import { uid } from '../lib/Utils';
