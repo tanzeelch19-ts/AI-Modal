@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MAX_IMG } from "../lib/constant";
+import { MAX_IMG } from "../lib/Constants";
 
 import {readImage,  readVideo } from '../lib/Media';
 
