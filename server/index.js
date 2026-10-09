@@ -164,6 +164,56 @@ async function streamGemini(messages, signal, send) {
   }
 }
 
+// ---------- Chat names (the short title shown in the history list) ----------
+// One tiny extra request after the first reply of a new chat. Set AI_TITLES=off in .env to skip it
+// (names are then made from the first message only).
+const AI_TITLES = (process.env.AI_TITLES ?? 'on').trim().toLowerCase() !== 'off';
+const TITLE_RULES = 'Write a short title for this chat: 2 to 5 words, at most 40 characters, in the same language and script as the user message. Reply with the title only: no quotes, no full stop, no markdown.';
+let titleEffortRejected = false;
+
+async function geminiTitle(prompt, signal) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return '';
+  const call = (effort) => fetch(GEMINI_URL, {
+    method: 'POST',
+    signal,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: GEMINI_MODEL,
+      messages: [{ role: 'system', content: TITLE_RULES }, { role: 'user', content: prompt }],
+      max_tokens: 256,   // thinking models count their thinking in this too, so leave room
+      ...(effort ? { reasoning_effort: effort } : {}),
+    }),
+  });
+  let r = await call(titleEffortRejected ? '' : 'minimal');
+  if (r.status === 400 && !titleEffortRejected) {
+    if (!/reason|think/i.test(await r.text().catch(() => ''))) return '';
+    titleEffortRejected = true;   // this model does not accept "minimal": remember, and retry without it
+    r = await call('');
+  }
+  if (!r.ok) return '';
+  return (await r.json()).choices?.[0]?.message?.content || '';
+}
+
+async function claudeTitle(prompt, signal) {
+  const r = await claude.messages.create({ model: CLAUDE_MODEL, max_tokens: 40, system: TITLE_RULES, messages: [{ role: 'user', content: prompt }] }, { signal });
+  return r.content.map((b) => (b.type === 'text' ? b.text : '')).join('');
+}
+
+// Always answers { title }; it is '' when no name could be made (the browser then keeps its own quick name).
+app.post('/api/title', async (req, res) => {
+  const user = String(req.body?.user || '').slice(0, 600);
+  const reply = String(req.body?.reply || '').slice(0, 600);
+  if (!AI_TITLES || !user.trim()) return res.json({ title: '' });
+  try {
+    const prompt = `User message:\n${user}\n\nAssistant reply:\n${reply}`;
+    const title = await (PROVIDER === 'gemini' ? geminiTitle : claudeTitle)(prompt, AbortSignal.timeout(20000));
+    res.json({ title: String(title).trim().slice(0, 80) });
+  } catch {
+    res.json({ title: '' });
+  }
+});
+
 // ---------- API ----------
 app.post('/api/chat', async (req, res) => {
   const messages = Array.isArray(req.body?.messages) ? clean(req.body.messages) : [];
