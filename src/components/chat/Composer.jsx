@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Mic, Paperclip, Send, Square } from 'lucide-react';
 import attachedCard from './attachedCard.jsx';
-import IconButton from '../ui/IconButton.jsx';
+import IconButton from '../ui/IconButtons.jsx';
 import { scrollbar } from '../../lib/Styles.js';
 import { cn } from '../../lib/Utils.js';
 
