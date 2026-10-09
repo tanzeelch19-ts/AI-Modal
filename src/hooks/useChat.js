@@ -1,10 +1,9 @@
-import { useRef, useState } from 'react';
-import { fetchAiTitle, quickTitle, uniqueTitle } from '../lib/chatTitles';
-import {INDEX_KEY, loadChat, loadIndex, loadUsage, removeChat, removeEntry, saveChat, saveUsage, upsertEntry } from '../lib/Chatstore.js';
-import { streamChat } from '../lib/Api';
-import { toApi } from '../lib/buildUserMessage';
-import { uid } from '../lib/Utils';
-
+import { useEffect, useRef, useState } from 'react';
+import { streamChat } from '../lib/Api.js';
+import { fetchAiTitle, quickTitle, uniqueTitle } from '../lib/chatTitle.js';
+import { INDEX_KEY, loadChat, loadIndex, loadUsage, removeChat, removeEntry, saveChat, saveUsage, upsertEntry} from '../lib/chatStores';
+import { toApi } from '../lib/buildUserMessage.js';
+import { uid } from '../lib/Utils.js';
 
 // Everything about conversations: history list, open chat, sending, streaming, regenerate, delete, usage.
 //
