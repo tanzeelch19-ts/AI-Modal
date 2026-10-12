@@ -1,7 +1,7 @@
 import { Copy, X } from 'lucide-react';
-import actionButton from '../ui/actionButton'
 import Card from '../ui/Card';
 import Markdown from '../markdown/Markdown';
+import ActionButton from '../ui/ActionButtons.jsx';
 
 export default function SavedView({ saved, onCopy, onRemove }) {
   return (
