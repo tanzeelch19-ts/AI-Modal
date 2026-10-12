@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BarChart3, Bookmark, Plus, Sparkles, Trash2 } from 'lucide-react';
-import ConfirmDialog from '../ui/Confirmdialo.jsx'
+import ConfirmDialog from '../ui/ConfirmDialo.jsx'
 import { cn } from '../../lib/Utils.js';
 import { brandGradient, clickable, scrollbar } from '../../lib/Styles.js';
 
