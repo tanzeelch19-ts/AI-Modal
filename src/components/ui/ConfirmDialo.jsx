@@ -7,7 +7,7 @@ const button = 'rounded-[10px] border px-4 py-2 transition-colors active:scale-[
 
 // An "Are you sure?" window drawn inside the app (not the browser's own confirm box).
 // Esc or a click outside = cancel. It is drawn on <body> so it covers the whole screen, also on phones.
-export default function confirmDialog({ open, title, message, confirmText = 'Delete', cancelText = 'Cancel', onConfirm, onCancel }) {
+export default function ConfirmDialog({ open, title, message, confirmText = 'Delete', cancelText = 'Cancel', onConfirm, onCancel }) {
   const id = useId();
   const cancelBtn = useRef(null);
   const confirmBtn = useRef(null);
