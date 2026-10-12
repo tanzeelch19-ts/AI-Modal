@@ -5,6 +5,19 @@ import { INDEX_KEY, loadChat, loadIndex, loadUsage, removeChat, removeEntry, sav
 import { toApi } from '../lib/buildUserMessage.js';
 import { uid } from '../lib/Utils.js';
 
+// Wait `ms`, but stop at once if the user presses Stop (rejects with an AbortError).
+const pause = (ms, signal) => new Promise((resolve, reject) => {
+  const fail = () => reject(Object.assign(new Error('Stopped'), { name: 'AbortError' }));
+  if (signal.aborted) return fail();
+  const t = setTimeout(() => { signal.removeEventListener('abort', onAbort); resolve(); }, ms);
+  function onAbort() { clearTimeout(t); fail(); }
+  signal.addEventListener('abort', onAbort, { once: true });
+});
+ 
+// A failure that happens before the first word and is usually temporary: the server is restarting
+// (502/503/504 from the dev proxy) or the connection dropped. Those are retried quietly.
+const isTemporary = (e) => e.name !== 'AbortError' && (e instanceof TypeError || /^Server error \((502|503|504)\)/.test(e.message));
+ 
 // Everything about conversations: history list, open chat, sending, streaming, regenerate, delete, usage.
 //
 // How history works (like ChatGPT):
@@ -80,12 +93,20 @@ export function useChat() {
     const tick = () => { timer = 0; setText(acc); };   // update the screen at most every 60 ms
  
     try {
-      await streamChat({
-        messages: toApi(history, blobs.current),
-        signal: ctrl.signal,
-        onText: (t) => { acc += t; if (!timer) timer = setTimeout(tick, 60); },
-        onUsage: (u) => setUsage((x) => ({ n: x.n + 1, in: x.in + (u.input_tokens || 0), out: x.out + (u.output_tokens || 0) })),
-      });
+      for (let attempt = 0; ; attempt++) {
+        try {
+          await streamChat({
+            messages: toApi(history, blobs.current),
+            signal: ctrl.signal,
+            onText: (t) => { acc += t; if (!timer) timer = setTimeout(tick, 60); },
+            onUsage: (u) => setUsage((x) => ({ n: x.n + 1, in: x.in + (u.input_tokens || 0), out: x.out + (u.output_tokens || 0) })),
+          });
+          break;
+        } catch (e) {
+          if (acc || attempt >= 2 || !isTemporary(e)) throw e;   // words already shown, or a real error: do not retry
+          await pause(attempt ? 1500 : 700, ctrl.signal);          // the typing dots stay on while we try again
+        }
+      }
       clearTimeout(timer); setText(acc || '(no reply)');
     } catch (e) {
       clearTimeout(timer);
@@ -139,8 +160,8 @@ export function useChat() {
     show(null);
   }
  
+  // The "Are you sure?" window is shown by the sidebar (ConfirmDialog) before this is called.
   function deleteChat(id) {
-    if (!confirm('Delete this conversation? This cannot be undone.')) return;
     ctrls.current.get(id)?.abort();
     gone.current.add(id);
     work.current.delete(id);

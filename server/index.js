@@ -108,9 +108,17 @@ function geminiError(status, body) {
 
 let effortRejected = false;
 
-async function streamGemini(messages, signal, send) {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) return send({ error: 'GEMINI_API_KEY is missing. Add it to the .env file, then restart the server.' });
+// Temporary problems (Google busy, a connection that was closed while idle) are retried quietly,
+// before anything is shown, so the first message of a chat does not fail for no reason.
+const RETRY_STATUS = new Set([500, 502, 503, 504]);
+class Transient extends Error {}
+const pause = (ms, signal) => new Promise((resolve) => {
+  const t = setTimeout(resolve, ms);
+  signal.addEventListener('abort', () => { clearTimeout(t); resolve(); }, { once: true });
+});
+const whyFailed = (e) => e?.cause?.code || e?.code || e?.message || 'unknown error';
+
+async function geminiOnce(key, messages, signal, send) {
   const call = (effort) => fetch(GEMINI_URL, {
     method: 'POST',
     signal,
@@ -123,44 +131,68 @@ async function streamGemini(messages, signal, send) {
       ...(effort ? { reasoning_effort: effort } : {}),
     }),
   });
-  try {
-    let r = await call(effortRejected ? '' : EFFORT);
-    if (r.status === 400 && EFFORT && !effortRejected) {
-      const body = await r.text().catch(() => '');
-      if (!/reason|think/i.test(body)) return send({ error: geminiError(400, body) });
-      // This model does not accept reasoning_effort: remember that, so the next messages skip the failed try.
-      effortRejected = true;
-      console.warn(`Model ${GEMINI_MODEL} does not accept GEMINI_THINKING=${EFFORT}. Continuing without it.`);
-      r = await call('');
-    }
-    if (!r.ok || !r.body) return send({ error: geminiError(r.status, await r.text().catch(() => '')) });
+  let r = await call(effortRejected ? '' : EFFORT);
+  if (r.status === 400 && EFFORT && !effortRejected) {
+    const body = await r.text().catch(() => '');
+    if (!/reason|think/i.test(body)) return send({ error: geminiError(400, body) });
+    // This model does not accept reasoning_effort: remember that, so the next messages skip the failed try.
+    effortRejected = true;
+    console.warn(`Model ${GEMINI_MODEL} does not accept GEMINI_THINKING=${EFFORT}. Continuing without it.`);
+    r = await call('');
+  }
+  if (!r.ok || !r.body) {
+    const body = await r.text().catch(() => '');
+    if (RETRY_STATUS.has(r.status)) throw new Transient(geminiError(r.status, body));
+    return send({ error: geminiError(r.status, body) });
+  }
 
-    const dec = new TextDecoder();
-    let buf = '';
-    let usage = null;
-    for await (const chunk of r.body) {
-      buf += dec.decode(chunk, { stream: true });
-      let m;
-      while ((m = /\r?\n\r?\n/.exec(buf))) {
-        const block = buf.slice(0, m.index);
-        buf = buf.slice(m.index + m[0].length);
-        for (const line of block.split(/\r?\n/)) {
-          if (!line.startsWith('data:')) continue;
-          const data = line.slice(5).trim();
-          if (!data || data === '[DONE]') continue;
-          let ev;
-          try { ev = JSON.parse(data); } catch { continue; }
-          const err = (Array.isArray(ev) ? ev[0] : ev)?.error;
-          if (err) return send({ error: geminiError(err.code || 500, JSON.stringify({ error: err })) });
-          const text = ev.choices?.[0]?.delta?.content;
-          if (text) send({ text });
-          if (ev.usage) usage = { input_tokens: ev.usage.prompt_tokens || 0, output_tokens: ev.usage.completion_tokens || 0 };
+  const dec = new TextDecoder();
+  let buf = '';
+  let usage = null;
+  let got = false;
+  for await (const chunk of r.body) {
+    buf += dec.decode(chunk, { stream: true });
+    let m;
+    while ((m = /\r?\n\r?\n/.exec(buf))) {
+      const block = buf.slice(0, m.index);
+      buf = buf.slice(m.index + m[0].length);
+      for (const line of block.split(/\r?\n/)) {
+        if (!line.startsWith('data:')) continue;
+        const data = line.slice(5).trim();
+        if (!data || data === '[DONE]') continue;
+        let ev;
+        try { ev = JSON.parse(data); } catch { continue; }
+        const err = (Array.isArray(ev) ? ev[0] : ev)?.error;
+        if (err) {
+          const msg = geminiError(err.code || 500, JSON.stringify({ error: err }));
+          if (!got && RETRY_STATUS.has(err.code)) throw new Transient(msg);
+          return send({ error: msg });
         }
+        const text = ev.choices?.[0]?.delta?.content;
+        if (text) { got = true; send({ text }); }
+        if (ev.usage) usage = { input_tokens: ev.usage.prompt_tokens || 0, output_tokens: ev.usage.completion_tokens || 0 };
       }
     }
-    if (usage) send({ usage });
-  } catch (e) {
-    if (!signal.aborted) send({ error: e?.message || 'Could not reach Gemini. Check your internet connection.' });
+  }
+  if (usage) send({ usage });
+}
+
+async function streamGemini(messages, signal, send) {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return send({ error: 'GEMINI_API_KEY is missing. Add it to the .env file, then restart the server.' });
+  let sent = false;   // true once the first words reached the browser: after that we never start over
+  const out = (o) => { if (o.text) sent = true; send(o); };
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await geminiOnce(key, messages, signal, out);
+    } catch (e) {
+      if (signal.aborted) return;
+      if (sent || attempt >= 2) {
+        return send({ error: e instanceof Transient ? e.message : `Could not reach Gemini (${whyFailed(e)}). Check your internet connection, then press Retry.` });
+      }
+      console.warn(`Gemini request failed (${e instanceof Transient ? e.message : whyFailed(e)}). Trying again (${attempt + 1}/2)...`);
+      await pause(attempt ? 1500 : 600, signal);
+    }
   }
 }
 

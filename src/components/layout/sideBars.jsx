@@ -1,7 +1,8 @@
+import { useState } from 'react';
 import { BarChart3, Bookmark, Plus, Sparkles, Trash2 } from 'lucide-react';
-import { cn } from '../../lib/Utils';
-import {brandGradient, clickable,  scrollbar } from '../../lib/Styles'; 
-
+import ConfirmDialog from '../ui/ConfirmDialog.jsx';
+import { cn } from '../../lib/Utils.js';
+import { brandGradient, clickable, scrollbar } from '../../lib/Styles.js';
 
 const row = clickable + ' inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 transition-colors active:scale-[.96] pointer-coarse:min-h-10';
 const on = 'bg-panel text-ink';
@@ -16,7 +17,9 @@ function NavButton({ active, icon: Icon, children, ...props }) {
   );
 }
 
-export default function sideBars({ open, view, chats, cur, onClose, onNewChat, onOpenView, onOpenChat, onDeleteChat }) {
+export default function sidebar({ open, view, chats, cur, onClose, onNewChat, onOpenView, onOpenChat, onDeleteChat }) {
+  const [doomed, setDoomed] = useState(null);   // the chat waiting for the answer to "Delete this chat?"
+
   return (
     <>
       {open && <div className="fixed inset-0 z-20 bg-black/50 min-[721px]:hidden" onClick={onClose} />}
@@ -61,7 +64,7 @@ export default function sideBars({ open, view, chats, cur, onClose, onNewChat, o
                 </button>
                 <button
                   aria-label="Delete chat"
-                  onClick={() => onDeleteChat(c.id)}
+                  onClick={() => setDoomed(c)}
                   className={cn(clickable, 'inline-flex size-9 flex-none items-center justify-center rounded-lg p-0 text-mute transition-colors hover:bg-panel hover:text-err pointer-coarse:size-11')}
                 >
                   <Trash2 size={15} />
@@ -71,6 +74,14 @@ export default function sideBars({ open, view, chats, cur, onClose, onNewChat, o
           })}
         </div>
       </aside>
+
+      <ConfirmDialog
+        open={!!doomed}
+        title="Delete this chat?"
+        message={`"${doomed?.title || 'New chat'}" and all its messages will be deleted. This cannot be undone.`}
+        onCancel={() => setDoomed(null)}
+        onConfirm={() => { onDeleteChat(doomed.id); setDoomed(null); }}
+      />
     </>
   );
 }
