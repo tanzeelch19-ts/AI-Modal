@@ -2,7 +2,7 @@ import { Copy, X } from 'lucide-react';
 import ActionButton from '../ui/Actionbutton.jsx';
 import Card from '../ui/Card.jsx';
 import Markdown from '../markdown/Markdown.jsx';
-export default function SavedView({ saved, onCopy, onRemove }) {
+export default function SavedView ({ saved, onCopy, onRemove }) {
   return (
     <div className="mx-auto max-w-[760px]">
       {saved.length ? saved.map((s, i) => (

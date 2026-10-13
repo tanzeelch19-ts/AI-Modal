@@ -3,7 +3,7 @@ import Composer from './components/chat/Composer';
 import EmptyState from './components/chat/Emptystate';
 import MessageList from './components/chat/MessageList';
 import OfflineBanner from './components/layout/Offlinebanner';
-import SavedView from './components/views/Savedview';
+import SavedView from './components/views/Savedview.jsx';
 import Sidebar from './components/layout/sideBars';
 import Toast from './components/ui/Toast';
 import TopBar from './components/markdown/TopBar';
@@ -76,7 +76,7 @@ export default function App() {
 
         <div ref={listRef} className={cn('flex-1 overflow-y-auto px-4 py-5 mobile:px-3 mobile:py-3.5', scrollbar)}>
           {view === 'saved' && (
-            <SavedView saved={saved} onCopy={onCopy} onRemove={(i) => setSaved(saved.filter((_, j) => j !== i))} />
+            <Savedview saved={saved} onCopy={onCopy} onRemove={(i) => setSaved(saved.filter((_, j) => j !== i))} />
           )}
           {view === 'usage' && <UsageView usage={usage} chatCount={chats.length} />}
           {view === 'chat' && !msgs.length && <EmptyState onPick={onPickPrompt} />}
