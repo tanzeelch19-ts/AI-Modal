@@ -18,7 +18,7 @@ import { useToast } from './hooks/useToast';
 import { VoiceInput } from './hooks/VoiceInput';
 import { buildUserMessage } from './lib/buildUserMessage';
 import { scrollbar } from './lib/Styles';
-import { cn , copyText, speak } from './lib/Utils';
+import { cn, copyText, speak } from './lib/Utils';
 
 export default function App() {
   const [theme, toggleTheme] = Theme();
