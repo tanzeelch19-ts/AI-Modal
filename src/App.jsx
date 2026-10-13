@@ -76,7 +76,7 @@ export default function App() {
 
         <div ref={listRef} className={cn('flex-1 overflow-y-auto px-4 py-5 mobile:px-3 mobile:py-3.5', scrollbar)}>
           {view === 'saved' && (
-            <Savedview saved={saved} onCopy={onCopy} onRemove={(i) => setSaved(saved.filter((_, j) => j !== i))} />
+            <SavedView saved={saved} onCopy={onCopy} onRemove={(i) => setSaved(saved.filter((_, j) => j !== i))} />
           )}
           {view === 'usage' && <UsageView usage={usage} chatCount={chats.length} />}
           {view === 'chat' && !msgs.length && <EmptyState onPick={onPickPrompt} />}
