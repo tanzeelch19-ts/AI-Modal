@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 import Composer from './components/chat/Composer';
-import EmptyState from './components/chat/Emptystate';
+import EmptyState from './components/chat/EmptyState';
 import MessageList from './components/chat/MessageList';
-import OfflineBanner from './components/layout/Offlinebanner';
+import OfflineBanner from './components/layout/OfflineBanner';
 import SavedView from './components/views/Savedview.jsx';
 import Sidebar from './components/layout/sideBars';
 import Toast from './components/ui/Toast';
@@ -10,7 +10,7 @@ import TopBar from './components/markdown/TopBar';
 import UsageView from './components/views/UsageView';
 import { useAttachments } from './hooks/useAttachments';
 import { AutoScroll } from './lib/AutoScroll';
-import { useChat } from './hooks/Usechat';
+import { useChat } from './hooks/useChat';
 import { LocalStorage } from './lib/LocalStorage';
 import { useOnlineStatus } from './lib/useOnlineStatus'
 import { Theme } from './hooks/Theme';
