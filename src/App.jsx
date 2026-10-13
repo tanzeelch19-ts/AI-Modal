@@ -3,7 +3,7 @@ import Composer from './components/chat/Composer';
 import EmptyState from './components/chat/EmptyState';
 import MessageList from './components/chat/MessageList';
 import OfflineBanner from './components/layout/OfflineBanner';
-import SavedView from './components/views/SavedViews';
+import SavedView from './components/views/SavedView';
 import Sidebar from './components/layout/sideBars';
 import Toast from './components/ui/Toast';
 import TopBar from './components/markdown/TopBar';
