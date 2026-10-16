@@ -11,7 +11,13 @@ export async function streamChat({ messages, signal, onText, onUsage }) {
     if (c) localStorage.setItem('devai:code', c);
     throw new Error('Access code required. Press Retry.');
   }
-  if (!res.ok || !res.body) throw new Error(res.status === 413 ? 'Attachments are too large.' : `Server error (${res.status}). Is the server running?`);
+  if (!res.ok || !res.body) {
+    const why = await res.json().then((j) => j?.error, () => '');   // our server explains itself in JSON; Vercel's own errors are not JSON
+    throw new Error(
+      res.status === 413 ? 'Attachments are too large.'
+        : why || (res.status === 404 ? 'The chat API was not found (404). On Vercel, check that the api folder was deployed.' : `Server error (${res.status}). Is the server running?`),
+    );
+  }
 
   const reader = res.body.getReader(), dec = new TextDecoder();
   let buf = '';

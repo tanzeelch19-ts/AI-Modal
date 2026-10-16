@@ -1,0 +1,9 @@
+{
+  "regions": ["bom1"],
+  "functions": {
+    "api/*": {
+      "maxDuration": 60,
+      "supportsCancellation": true
+    }
+  }
+}
