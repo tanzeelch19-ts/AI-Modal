@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import CodeBlock from './CodeBlock.jsx';
+import CodeBlock from './CodeBlock';
 import { focusRing, scrollbar } from '../../lib/Styles.js';
 import { cn } from '../../lib/Utils.js';
 
