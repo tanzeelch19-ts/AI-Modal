@@ -5,7 +5,7 @@ import MessageList from './components/chat/MessageList.jsx';
 import OfflineBanner from './components/layout/OfflineBanner.jsx';
 import SavedView from './components/views/SavedView.jsx';
 import Sidebar from './components/layout/sideBar.jsx';
-import ScrollToBottom from './components/ui/ScrollToBottom.jsx';
+import ScrollToBottom from './components/ui/ScrollBottom.jsx';
 import Toast from './components/ui/Toast.jsx';
 import TopBar from './components/layout/TopBar.jsx';
 import UsageView from './components/views/UsageView.jsx';
