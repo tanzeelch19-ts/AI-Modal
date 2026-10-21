@@ -1,4 +1,4 @@
-   import  AttachmentCard from './components/chat/AttachedCard.jsx';
+   import  AttachmentCard from './AttachmetCard.jsx';
 
 
 // Attachments shown inside a sent message.
