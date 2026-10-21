@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Mic, Paperclip, Send, Square } from 'lucide-react';
-import attachedCard from './attachedCard.jsx';
+import AttachmentCard from './AttachedCard.jsx';
 import IconButton from '../ui/IconButtons.jsx';
 import { scrollbar } from '../../lib/Styles.js';
 import { cn } from '../../lib/Utils.js';
@@ -15,7 +15,7 @@ export default function Composer({
 
   return (
     <div
-      className="px-4 pb-[calc(14px+env(safe-area-inset-bottom))]"
+      className="flex-none px-4 pb-[calc(14px+env(safe-area-inset-bottom))] mobile:px-3 mobile:pb-[calc(10px+env(safe-area-inset-bottom))] short:pb-[calc(6px+env(safe-area-inset-bottom))]"
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => { e.preventDefault(); onAddFiles([...e.dataTransfer.files]); }}
     >
@@ -34,8 +34,8 @@ export default function Composer({
           rows={1}
           value={input}
           aria-label="Message"
-          placeholder="Ask anything, attach an image or video, or paste code…"
-          className={cn('max-h-40 flex-1 resize-none bg-transparent px-1.5 py-2 outline-none mobile:text-base', scrollbar)}
+          placeholder="Ask anything…"
+          className={cn('max-h-40 min-w-0 flex-1 resize-none bg-transparent px-1.5 py-2 outline-none mobile:text-base short:max-h-24', scrollbar)}
           onChange={(e) => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
           onPaste={(e) => {

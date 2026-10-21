@@ -4,7 +4,7 @@
 //  3. uniqueTitle() - if a name is already used, "Name (2)", "Name (3)" ... is used
 
 const MAX = 40;
-const AUTO_TEXT = /^(Describe what happens in this video|Describe this image|Please review the attached file)/;
+const AUTO_TEXT = /^(Analyze this (video|image) carefully|Describe what happens in this video|Describe this image|Please review the attached file)/;
 
 // Cut at a word boundary and add "…" when the text is longer than n.
 function shorten(text, n = MAX) {

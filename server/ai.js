@@ -15,7 +15,7 @@ How to answer:
 - Code: give complete, correct, runnable code (with imports and any needed setup), using current idiomatic practice for the language and framework the user is using. Mention version assumptions when they matter. Handle errors and edge cases, and point out security problems you notice. When the user shows code, keep their style and names, find the real root cause, show the fixed code and explain in one or two lines why it works.
 - If a request is ambiguous and a wrong guess would waste the user's time, ask one short question. Otherwise make a sensible assumption and say what it is.
 - For maths and logic, work step by step and double-check the result.
-- You can see images the user attaches, and frames sampled from attached videos: describe only what is actually visible, read visible text and code carefully, and say when something is unclear. You cannot hear audio.
+- Images and video: you can see images the user attaches, and frames sampled from attached videos (each frame is labelled with its number and time; you cannot hear audio and you do not see the motion between frames). Look carefully before answering. Note what is really visible (objects, people, text, screens, code, numbers, colours, setting), read any text or code exactly as written, and for a video describe what changes from frame to frame, using the times. Say plainly what you cannot tell (unclear, cut off, too small, or between frames). Never invent details, and do not name real people from their faces. Then answer exactly what the user asked, giving the answer first when they asked a question.
 - Reply in the language the user writes in (including Roman Urdu or Hinglish if they write that way).`;
 
 // ---------- Clean the messages sent by the browser ----------
@@ -34,7 +34,7 @@ export function clean(messages) {
 
 // ---------- Which models can answer, in the order they are tried ----------
 // 1. Gemini models: GEMINI_MODEL first, then GEMINI_FALLBACK_MODELS (all use the same free key, but each model has its own free limit).
-// 2. Optional second provider (any OpenAI-compatible API): FALLBACK_BASE_URL + FALLBACK_API_KEY + FALLBACK_MODEL.
+// 2. OpenAI (GPT): OPENAI_API_KEY (+ OPENAI_MODEL). Then optional other backup providers (any OpenAI-compatible API, up to four): FALLBACK_BASE_URL + FALLBACK_API_KEY + FALLBACK_MODEL (then FALLBACK2_..., FALLBACK3_..., FALLBACK4_...).
 // 3. Optional Claude (paid): used last only when FALLBACK_TO_CLAUDE=on. With PROVIDER=anthropic, Claude is first instead.
 const DEFAULT_GEMINI_FALLBACKS = 'gemini-3.6-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite';
 
@@ -46,22 +46,46 @@ function geminiTargets() {
   const base = (env('GEMINI_BASE_URL') || 'https://generativelanguage.googleapis.com/v1beta/openai').replace(/\/$/, '');
   const thinking = env('GEMINI_THINKING', 'low').toLowerCase();
   const effort = ['', 'default'].includes(thinking) ? '' : thinking;
+  const imgThinking = env('GEMINI_THINKING_IMAGES', 'medium').toLowerCase();   // used when the chat contains pictures or video frames
+  const imageEffort = ['', 'default'].includes(imgThinking) ? '' : imgThinking;
   const fallbacks = isOff('GEMINI_FALLBACK_MODELS') ? [] : (env('GEMINI_FALLBACK_MODELS') || DEFAULT_GEMINI_FALLBACKS).split(',');
   const models = [...new Set([env('GEMINI_MODEL') || 'gemini-3.8-flash', ...fallbacks].map((s) => s.trim()).filter(Boolean))];
   return models.map((model) => ({
     id: `gemini:${model}`, label: `Gemini ${model}`, kind: 'openai', model, key, keyId: 'gemini', keyName: 'GEMINI_API_KEY',
-    url: `${base}/chat/completions`, effort, titleEffort: 'minimal', vision: true,
+    url: `${base}/chat/completions`, effort, imageEffort, titleEffort: 'minimal', vision: true,
   }));
 }
 
+// OpenAI (GPT). Needs only OPENAI_API_KEY; OPENAI_MODEL (default gpt-6.1-sol) may list several models separated by commas.
+// Pictures are allowed unless you set OPENAI_VISION=off. OPENAI_BASE_URL is only for an OpenAI-compatible service other than OpenAI.
+function openaiTargets() {
+  const key = env('OPENAI_API_KEY');
+  if (!key) return [];
+  const base = (env('OPENAI_BASE_URL') || 'https://api.openai.com/v1').replace(/\/$/, '');
+  const models = [...new Set((env('OPENAI_MODEL') || 'gpt-6.1-sol').split(',').map((m) => m.trim()).filter(Boolean))];
+  return models.map((model) => ({
+    id: `openai:${model}`, label: model, kind: 'openai', model, key, keyId: 'openai', keyName: 'OPENAI_API_KEY',
+    url: `${base}/chat/completions`, effort: '', imageEffort: '', titleEffort: '', vision: !isOff('OPENAI_VISION'),
+  }));
+}
+
+// Backup providers (any OpenAI-compatible API, for example OpenAI itself). Up to four, each with its own key:
+//   FALLBACK_*  FALLBACK2_*  FALLBACK3_*  FALLBACK4_*   (BASE_URL, API_KEY, MODEL, VISION). MODEL may list several models, separated by commas.
 function extraTargets() {
-  const base = env('FALLBACK_BASE_URL'), key = env('FALLBACK_API_KEY'), model = env('FALLBACK_MODEL');
-  if (!base || !key || !model) return [];
-  return [{
-    id: `extra:${model}`, label: model, kind: 'openai', model, key, keyId: 'extra', keyName: 'FALLBACK_API_KEY',
-    url: `${base.replace(/\/$/, '')}/chat/completions`, effort: '', titleEffort: '',
-    vision: isOn('FALLBACK_VISION'),   // images are only sent to this model when you say it can read them
-  }];
+  const out = [];
+  for (const slot of ['FALLBACK', 'FALLBACK2', 'FALLBACK3', 'FALLBACK4']) {
+    const base = env(`${slot}_BASE_URL`), key = env(`${slot}_API_KEY`), models = env(`${slot}_MODEL`);
+    if (!base || !key || !models) continue;
+    const id = slot === 'FALLBACK' ? 'extra' : slot.replace('FALLBACK', 'extra');
+    for (const model of [...new Set(models.split(',').map((m) => m.trim()).filter(Boolean))]) {
+      out.push({
+        id: `${id}:${model}`, label: model, kind: 'openai', model, key, keyId: id, keyName: `${slot}_API_KEY`,
+        url: `${base.replace(/\/$/, '')}/chat/completions`, effort: '', imageEffort: '', titleEffort: '',
+        vision: isOn(`${slot}_VISION`),   // images are only sent to these models when you say they can read them
+      });
+    }
+  }
+  return out;
 }
 
 function claudeTargets() {
@@ -72,10 +96,10 @@ function claudeTargets() {
 }
 
 export function chain() {
-  const gemini = geminiTargets(), extra = extraTargets(), claude = claudeTargets();
+  const gemini = geminiTargets(), openai = openaiTargets(), extra = extraTargets(), claude = claudeTargets();
   return provider() === 'gemini'
-    ? [...gemini, ...extra, ...(isOn('FALLBACK_TO_CLAUDE') ? claude : [])]
-    : [...claude, ...gemini, ...extra];
+    ? [...gemini, ...openai, ...extra, ...(isOn('FALLBACK_TO_CLAUDE') ? claude : [])]
+    : [...claude, ...gemini, ...openai, ...extra];
 }
 
 // Short description for logs and the /api/health page (never includes a key).
@@ -156,7 +180,7 @@ function toOpenAI(messages) {
   return out;
 }
 
-async function openaiStream(t, messages, signal, send) {
+async function openaiStream(t, messages, signal, send, images = false) {
   const call = (effort) => fetch(t.url, {
     method: 'POST',
     signal,
@@ -169,7 +193,8 @@ async function openaiStream(t, messages, signal, send) {
       ...(effort ? { reasoning_effort: effort } : {}),
     }),
   });
-  let effort = effortNow.has(t.id) ? effortNow.get(t.id) : t.effort;
+  const ekey = images ? `${t.id}:img` : t.id;   // pictures may use a different thinking level than plain text
+  let effort = effortNow.has(ekey) ? effortNow.get(ekey) : (images ? t.imageEffort : t.effort);
   let r = await call(effort);
   while (r.status === 400 && effort) {
     const body = await r.text().catch(() => '');
@@ -177,7 +202,7 @@ async function openaiStream(t, messages, signal, send) {
     // This model does not accept that thinking level (for example "minimal"): use the closest one it accepts, and remember it.
     const next = effort === 'minimal' ? 'low' : '';
     console.warn(`[ai] ${t.model} does not accept thinking level "${effort}". Using ${next ? `"${next}"` : 'its default'}.`);
-    effortNow.set(t.id, next);
+    effortNow.set(ekey, next);
     effort = next;
     r = await call(effort);
   }
@@ -249,7 +274,10 @@ export async function streamAnswer(messages, signal, send) {
   const usable = hasImages(messages) ? all.filter((t) => t.vision) : all;
   if (!usable.length) return send({ error: 'This chat contains an image, but none of the configured models can read images. Start a new chat without the image.' });
 
-  const ordered = readyFirst(usable);
+  const pictures = hasImages(messages);
+  const isLite = (t) => /lite/i.test(t.model);
+  // For pictures and video accuracy matters most: the small "lite" models are only used after the bigger ones.
+  const ordered = readyFirst(pictures ? [...usable.filter((t) => !isLite(t)), ...usable.filter(isLite)] : usable);
   const more = ordered.length > 1;   // when another model can answer, a busy model is skipped at once instead of waited for
   const authFailed = new Set();
   const fails = [];
@@ -266,7 +294,7 @@ export async function streamAnswer(messages, signal, send) {
     current = t;
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        await (t.kind === 'claude' ? claudeStream : openaiStream)(t, messages, signal, out);
+        await (t.kind === 'claude' ? claudeStream : openaiStream)(t, messages, signal, out, pictures);
         console.log(`[ai] ${t.label}: first word after ${first} ms, finished after ${Date.now() - t0} ms`);
         return;
       } catch (e) {
@@ -302,7 +330,7 @@ async function openaiTitle(t, prompt, signal) {
     body: JSON.stringify({
       model: t.model,
       messages: [{ role: 'system', content: TITLE_RULES }, { role: 'user', content: prompt }],
-      max_tokens: 256,   // thinking models count their thinking in this too, so leave room
+      max_tokens: 1024,   // thinking models count their thinking in this too, so leave plenty of room (the title itself is a few words)
       ...(effort ? { reasoning_effort: effort } : {}),
     }),
   });

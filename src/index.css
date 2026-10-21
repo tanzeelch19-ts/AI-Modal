@@ -4,7 +4,7 @@
 */
 @import "tailwindcss";
 
-/* Theme colors. Dark by default; light when <html data-theme="light"> (set in hooks/Theme.js) */
+/* Theme colors. Dark by default; light when <html data-theme="light"> (set in hooks/useTheme.js) */
 :root {
   --bg: #0b0e14;
   --side: #0f131b;
@@ -53,6 +53,12 @@
   }
 }
 
-/* Small-screen variants: mobile:... (up to 720px) and tiny:... (up to 420px) */
-@custom-variant mobile (@media (max-width: 720px));
+/* Screen-size variants:
+   tiny:...   up to 420px wide  (small phones)
+   mobile:... up to 720px wide  (phones)
+   drawer:... up to 900px wide  (phones and tablets held upright: the sidebar slides in from the left instead of always being open)
+   short:...  up to 500px high  (phones held sideways) */
 @custom-variant tiny (@media (max-width: 420px));
+@custom-variant mobile (@media (max-width: 720px));
+@custom-variant drawer (@media (max-width: 900px));
+@custom-variant short (@media (max-height: 500px));

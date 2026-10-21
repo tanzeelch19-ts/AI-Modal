@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BarChart3, Bookmark, Plus, Sparkles, Trash2 } from 'lucide-react';
-import ConfirmDialog from '../ui/ConfirmDialo.jsx'
+import ConfirmDialog from '../ui/ConfirmDialo.jsx';
 import { cn } from '../../lib/Utils.js';
 import { brandGradient, clickable, scrollbar } from '../../lib/Styles.js';
 
@@ -17,20 +17,20 @@ function NavButton({ active, icon: Icon, children, ...props }) {
   );
 }
 
-export default function sidebar({ open, view, chats, cur, onClose, onNewChat, onOpenView, onOpenChat, onDeleteChat }) {
+export default function sideBar({ open, view, chats, cur, onClose, onNewChat, onOpenView, onOpenChat, onDeleteChat }) {
   const [doomed, setDoomed] = useState(null);   // the chat waiting for the answer to "Delete this chat?"
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-20 bg-black/50 min-[721px]:hidden" onClick={onClose} />}
+      {open && <div className="fixed inset-0 z-20 bg-black/50 min-[901px]:hidden" onClick={onClose} />}
 
       <aside
         className={cn(
           'flex w-[270px] flex-col gap-2 overflow-y-auto border-r border-line bg-side p-3',
           scrollbar,
-          'mobile:fixed mobile:inset-y-0 mobile:left-0 mobile:z-30 mobile:w-[82%] mobile:max-w-[310px]',
-          'mobile:pt-[calc(12px+env(safe-area-inset-top))] mobile:transition-transform mobile:duration-200',
-          open ? 'mobile:translate-x-0' : 'mobile:-translate-x-full',
+          'drawer:fixed drawer:inset-y-0 drawer:left-0 drawer:z-30 drawer:w-[82%] drawer:max-w-[310px]',
+          'drawer:pt-[calc(12px+env(safe-area-inset-top))] drawer:transition-transform drawer:duration-200',
+          open ? 'drawer:translate-x-0' : 'drawer:-translate-x-full',
         )}
       >
         <div className="mb-1.5 flex items-center gap-2.5">

@@ -1,28 +1,29 @@
 import { useRef, useState } from 'react';
-import Composer from './components/chat/Composer';
-import EmptyState from './components/chat/EmptyState';
-import MessageList from './components/chat/MessageList';
-import OfflineBanner from './components/layout/OfflineBanner';
-import SavedView from './components/views/SavedView';
-import Sidebar from './components/layout/sideBars';
-import Toast from './components/ui/Toast';
-import TopBar from './components/markdown/TopBar';
-import UsageView from './components/views/UsageView';
-import { useAttachments } from './hooks/useAttachments';
-import { AutoScroll } from './lib/AutoScroll';
-import { useChat } from './hooks/useChat';
-import { LocalStorage } from './lib/LocalStorage';
-import { useOnlineStatus } from './lib/useOnlineStatus'
-import { Theme } from './hooks/Theme';
-import { useToast } from './hooks/useToast';
-import { VoiceInput } from './hooks/VoiceInput';
-import { buildUserMessage } from './lib/buildUserMessage';
-import { scrollbar } from './lib/Styles';
-import { cn, copyText, speak } from './lib/Utils';
+import Composer from './components/chat/Composer.jsx';
+import EmptyState from './components/chat/EmptyState.jsx';
+import MessageList from './components/chat/MessageList.jsx';
+import OfflineBanner from './components/layout/OfflineBanner.jsx';
+import SavedView from './components/views/SavedView.jsx';
+import Sidebar from './components/layout/sideBar.jsx';
+import ScrollToBottom from './components/ui/ScrollToBottom.jsx';
+import Toast from './components/ui/Toast.jsx';
+import TopBar from './components/layout/TopBar.jsx';
+import UsageView from './components/views/UsageView.jsx';
+import { useAttachments } from './hooks/useAttachments.js';
+import { AutoScroll } from './hooks/AutoScroll.js';
+import { useChat } from './hooks/useChat.js';
+import { useLocalStorage } from './hooks/LocalStorage.js';
+import { useOnlineStatus } from './hooks/useOnlineStatus.js';
+import { useTheme } from './hooks/Theme.js';
+import { useToast } from './hooks/useToast.js';
+import { useVoiceInput } from './hooks/VoiceInput.js';
+import { buildUserMessage } from './lib/buildUserMessage.js';
+import { scrollbar } from './lib/Styles.js';
+import { cn, copyText, speak } from './lib/Utils.js';
 
 export default function App() {
-  const [theme, toggleTheme] = Theme();
-  const [saved, setSaved] = LocalStorage('devai:saved', []);
+  const [theme, toggleTheme] = useTheme();
+  const [saved, setSaved] = useLocalStorage('devai:saved', []);
   const [view, setView] = useState('chat'); // 'chat' | 'saved' | 'usage'
   const [menu, setMenu] = useState(false);  // sidebar open on phones
   const [input, setInput] = useState('');
@@ -33,9 +34,9 @@ export default function App() {
   const online = useOnlineStatus(() => toast('Back online.'));
   const { chats, chat, cur, usage, busy, send, regenerate, deleteChat, stop, selectChat, startNewChat } = useChat();
   const { pending, addFiles, removeAt, clear } = useAttachments(toast);
-  const { listening, toggleMic } = VoiceInput({ input, setInput, toast });
+  const { listening, toggleMic } = useVoiceInput({ input, setInput, toast });
 
-  AutoScroll(listRef, [chat?.msgs, view]);
+  const { away, toBottom, stickNext } = AutoScroll(listRef, [chat?.msgs, view]);
 
   const msgs = chat?.msgs || [];
 
@@ -43,6 +44,7 @@ export default function App() {
     const text = input.trim();
     if (busy || (!text && !pending.length)) return;
     const { message, images } = buildUserMessage(text, pending);
+    stickNext();   // your own message always scrolls into view, even if you had scrolled up
     send(message, images);
     setView('chat');
     setInput('');
@@ -57,16 +59,16 @@ export default function App() {
   const title = view === 'saved' ? 'Saved responses' : view === 'usage' ? 'Usage' : chat?.title || 'DevAI';
 
   return (
-    <div className="flex h-dvh bg-app pt-[env(safe-area-inset-top)] font-sans text-[15px] leading-[1.55] text-ink">
+    <div className="flex h-dvh bg-app pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] font-sans text-[15px] leading-[1.55] text-ink">
       <Sidebar
         open={menu}
         view={view}
         chats={chats}
         cur={cur}
         onClose={() => setMenu(false)}
-        onNewChat={() => { startNewChat(); setView('chat'); setMenu(false); }}
-        onOpenView={(v) => { setView(v); setMenu(false); }}
-        onOpenChat={(id) => { selectChat(id); setView('chat'); setMenu(false); }}
+        onNewChat={() => { stickNext(); startNewChat(); setView('chat'); setMenu(false); }}
+        onOpenView={(v) => { stickNext(); setView(v); setMenu(false); }}
+        onOpenChat={(id) => { stickNext(); selectChat(id); setView('chat'); setMenu(false); }}
         onDeleteChat={deleteChat}
       />
 
@@ -74,22 +76,25 @@ export default function App() {
         <TopBar title={title} theme={theme} onMenu={() => setMenu(true)} onToggleTheme={toggleTheme} />
         {!online && <OfflineBanner />}
 
-        <div ref={listRef} className={cn('flex-1 overflow-y-auto px-4 py-5 mobile:px-3 mobile:py-3.5', scrollbar)}>
-          {view === 'saved' && (
-            <SavedView saved={saved} onCopy={onCopy} onRemove={(i) => setSaved(saved.filter((_, j) => j !== i))} />
-          )}
-          {view === 'usage' && <UsageView usage={usage} chatCount={chats.length} />}
-          {view === 'chat' && !msgs.length && <EmptyState onPick={onPickPrompt} />}
-          {view === 'chat' && msgs.length > 0 && (
-            <MessageList
-              msgs={msgs}
-              busy={busy}
-              onCopy={onCopy}
-              onSave={onSave}
-              onSpeak={(text) => speak(text, toast)}
-              onRegenerate={regenerate}
-            />
-          )}
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div ref={listRef} className={cn('flex-1 overflow-y-auto px-4 py-5 mobile:px-3 mobile:py-3.5', scrollbar)}>
+            {view === 'saved' && (
+              <SavedView saved={saved} onCopy={onCopy} onRemove={(i) => setSaved(saved.filter((_, j) => j !== i))} />
+            )}
+            {view === 'usage' && <UsageView usage={usage} chatCount={chats.length} />}
+            {view === 'chat' && !msgs.length && <EmptyState onPick={onPickPrompt} />}
+            {view === 'chat' && msgs.length > 0 && (
+              <MessageList
+                msgs={msgs}
+                busy={busy}
+                onCopy={onCopy}
+                onSave={onSave}
+                onSpeak={(text) => speak(text, toast)}
+                onRegenerate={regenerate}
+              />
+            )}
+          </div>
+          <ScrollToBottom show={away} onClick={toBottom} />
         </div>
 
         {view === 'chat' && (

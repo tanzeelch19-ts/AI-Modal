@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { streamChat } from '../lib/Api.js';
-import { fetchAiTitle, quickTitle, uniqueTitle } from '../lib/chatTitles.js';
-import { INDEX_KEY, loadChat, loadIndex, loadUsage, removeChat, removeEntry, saveChat, saveUsage, upsertEntry} from '../lib/chatStores';
+import { uniqueTitle,fetchAiTitle, quickTitle,} from '../lib/chatTitles.js';
+
+import { INDEX_KEY, loadChat, loadIndex, loadUsage, removeChat, removeEntry, saveChat, saveUsage, upsertEntry } from '../lib/chatStores.js';
 import { toApi } from '../lib/buildUserMessage.js';
 import { uid } from '../lib/Utils.js';
 
@@ -13,11 +14,11 @@ const pause = (ms, signal) => new Promise((resolve, reject) => {
   function onAbort() { clearTimeout(t); fail(); }
   signal.addEventListener('abort', onAbort, { once: true });
 });
- 
+
 // A failure that happens before the first word and is usually temporary: the server is restarting
 // (502/503/504 from the dev proxy) or the connection dropped. Those are retried quietly.
 const isTemporary = (e) => e.name !== 'AbortError' && (e instanceof TypeError || /^Server error \((502|503|504)\)/.test(e.message));
- 
+
 // Everything about conversations: history list, open chat, sending, streaming, regenerate, delete, usage.
 //
 // How history works (like ChatGPT):
@@ -31,14 +32,14 @@ export function useChat() {
   const [msgs, setMsgs] = useState([]);            // messages of the open chat
   const [usage, setUsage] = useState(loadUsage);
   const [live, setLive] = useState([]);            // ids of chats that are answering right now
- 
+
   const curRef = useRef(null);          // same as `cur`, readable inside async code
   const work = useRef(new Map());       // id -> messages in memory (open chat, answering chats, unsaved changes)
   const dirty = useRef(new Set());      // ids with changes not yet written to storage
   const ctrls = useRef(new Map());      // id -> AbortController of the running reply
   const gone = useRef(new Set());       // deleted ids (late updates for them are ignored)
   const blobs = useRef({});             // message id -> base64 images (memory only)
- 
+
   // Change the messages of chat `id`. The screen updates only if that chat is the open one.
   function update(id, next) {
     if (gone.current.has(id)) return;
@@ -47,7 +48,7 @@ export function useChat() {
     dirty.current.add(id);
     if (curRef.current === id) setMsgs(value);
   }
- 
+
   // Write one chat (and its place in the sidebar list) to storage.
   function save(id, patch) {
     if (gone.current.has(id) || !dirty.current.has(id)) return;
@@ -58,40 +59,43 @@ export function useChat() {
     setChats(upsertEntry(id, { ts: Date.now(), ...patch }));
     if (curRef.current !== id && !ctrls.current.has(id)) work.current.delete(id);   // free memory
   }
- 
+
   function show(id) {
     curRef.current = id;
     setCur(id);
     setMsgs(id ? work.current.get(id) || [] : []);
   }
- 
+
   // Forget the chat we are leaving, unless it is still answering or has unsaved changes.
   function leave() {
     const id = curRef.current;
     if (id && !dirty.current.has(id) && !ctrls.current.has(id)) work.current.delete(id);
   }
- 
-  // After the first reply: ask the AI for a nicer name and replace the quick one.
+
+  // After a reply: ask the AI for a nicer name and replace the quick one. If that fails (busy, free limit),
+  // it is tried again after the next reply (up to the third), so a chat does not keep its rough first-words name for good.
   async function giveName(id, history, reply) {
-    if (gone.current.has(id) || history.filter((m) => m.role === 'user').length !== 1) return;
+    const asked = history.filter((m) => m.role === 'user');
+    if (gone.current.has(id) || !asked.length || asked.length > 3) return;
     if (loadIndex().find((e) => e.id === id)?.ai) return;
-    const t = await fetchAiTitle(history[0].text, reply);
+    const firstReply = history.find((m) => m.role === 'assistant' && m.text && !m.err)?.text || reply;
+    const t = await fetchAiTitle(asked[0].text, firstReply);
     if (!t || gone.current.has(id)) return;
     const list = loadIndex();
     if (!list.some((e) => e.id === id)) return;   // deleted meanwhile (maybe in another tab)
     setChats(upsertEntry(id, { title: uniqueTitle(t, list, id), ai: 1 }));
   }
- 
+
   async function run(id, history) {
     const aid = uid(), ctrl = new AbortController();
     ctrls.current.set(id, ctrl);
     setLive((l) => [...l, id]);
     update(id, [...history, { id: aid, role: 'assistant', text: '' }]);
- 
+
     let acc = '', timer = 0, failed = false;
     const setText = (text, err) => update(id, (ms) => ms.map((m) => (m.id === aid ? { ...m, text, err } : m)));
     const tick = () => { timer = 0; setText(acc); };   // update the screen at most every 60 ms
- 
+
     try {
       for (let attempt = 0; ; attempt++) {
         try {
@@ -120,7 +124,7 @@ export function useChat() {
     }
     if (acc && !failed) giveName(id, history, acc);
   }
- 
+
   function send(message, images) {
     if (images?.length) blobs.current[message.id] = images;
     let id = curRef.current, patch;
@@ -137,7 +141,7 @@ export function useChat() {
     save(id, patch);   // the question is saved at once, so a reload right now keeps it
     run(id, history);
   }
- 
+
   function regenerate() {
     const id = curRef.current;
     if (!id || ctrls.current.has(id)) return;
@@ -145,7 +149,7 @@ export function useChat() {
     while (ms.length && ms[ms.length - 1].role === 'assistant') ms.pop();
     if (ms.length) run(id, ms);
   }
- 
+
   function selectChat(id) {
     if (!id) return startNewChat();
     if (id === curRef.current) return;
@@ -154,12 +158,12 @@ export function useChat() {
     if (!(work.current.has(id) && (ctrls.current.has(id) || dirty.current.has(id)))) work.current.set(id, loadChat(id));
     show(id);
   }
- 
+
   function startNewChat() {
     leave();
     show(null);
   }
- 
+
   // The "Are you sure?" window is shown by the sidebar (ConfirmDialog) before this is called.
   function deleteChat(id) {
     ctrls.current.get(id)?.abort();
@@ -170,7 +174,7 @@ export function useChat() {
     setChats(removeEntry(id));
     if (curRef.current === id) show(null);
   }
- 
+
   useEffect(() => {
     const flush = () => { for (const id of [...dirty.current]) save(id); };
     const onHide = () => { if (document.visibilityState === 'hidden') flush(); };
@@ -186,11 +190,11 @@ export function useChat() {
       flush();
     };
   }, []);
- 
+
   useEffect(() => { saveUsage(usage); }, [usage]);
- 
+
   const chat = cur ? { id: cur, title: chats.find((c) => c.id === cur)?.title || 'New chat', msgs } : null;
- 
+
   return {
     chats, chat, cur, usage,
     busy: live.includes(cur),
@@ -198,4 +202,3 @@ export function useChat() {
     stop: () => ctrls.current.get(curRef.current)?.abort(),
   };
 }
- 

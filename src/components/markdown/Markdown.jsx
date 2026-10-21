@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import CodeBlock from './Codeblock.jsx';
+import CodeBlock from './CodeBlock.jsx';
 import { focusRing, scrollbar } from '../../lib/Styles.js';
 import { cn } from '../../lib/Utils.js';
 
@@ -10,12 +10,12 @@ const el = (Tag, cls) =>
   function MarkdownElement({ node, className, ...props }) {
     return <Tag {...props} className={cn(cls, className)} />;
   };
- 
+
 const heading = 'mt-[1em] mb-[.4em] text-[1.1rem] font-bold';
- 
+
 // Inline `code` gets a background; code inside <pre> (CodeBlock) does not.
 const inlineCode = '[:not(pre)>&]:rounded-[4px] [:not(pre)>&]:bg-panel [:not(pre)>&]:px-[5px] [:not(pre)>&]:py-px [:not(pre)>&]:text-[.9em]';
- 
+
 const components = {
   pre: CodeBlock,
   code: el('code', cn('font-mono', inlineCode)),
@@ -32,12 +32,13 @@ const components = {
   blockquote: el('blockquote', 'my-[.7em] border-l-2 border-line pl-3 text-mute'),
   hr: el('hr', 'my-4 border-line'),
   table: el('table', cn('my-[.6em] block overflow-x-auto border-collapse', scrollbar)),
-  th: el('th', 'border border-line bg-panel px-2.5 py-F1.5 text-left'),
-  td: el('td', 'border border-line px-2.5 py-1.5 text-left'),
+  th: el('th', 'border border-line bg-panel px-2.5 py-1.5 text-left wrap-normal'),
+  td: el('td', 'border border-line px-2.5 py-1.5 text-left wrap-normal'),
 };
- 
+
 const plugins = [remarkGfm];
 
+// memo: a message whose text did not change is not parsed again while a new reply streams in.
 export default memo(function Markdown({ children }) {
   return <ReactMarkdown remarkPlugins={plugins} components={components}>{children}</ReactMarkdown>;
 });
