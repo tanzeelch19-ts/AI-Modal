@@ -1,4 +1,4 @@
-   import  AttachmentCard from './AttachedCard.jsx';
+   import  AttachmentCard from './AttachedCards.jsx';
 
 
 // Attachments shown inside a sent message.
