@@ -112,7 +112,7 @@ export function describe() {
 // ---------- What happened to a model, and how to tell the user ----------
 // kind: auth (bad key) | quota (free limit used up) | missing (wrong model name) | busy (try again) | empty | bad (the request itself was refused)
 class Fail extends Error {
-  constructor(kind, message, wait = 0) { super(message); this.kind = kind; this.wait = wait; }
+  constructor(kind, message, wait = 0) { super(message); this.kind = kind; this.wait = wait; this.detail = ''; this.keyId = ''; this.keyName = ''; }
 }
 
 const bodyMessage = (body) => {
@@ -124,8 +124,9 @@ const bodyMessage = (body) => {
 
 function classify(status, body) {
   const text = String(body || '');
+  if (status === 429) return 'quota';   // checked first: a "limit reached" answer may also mention the API key
   if (status === 401 || status === 403 || /api[ _-]?key/i.test(text)) return 'auth';
-  if (status === 429 || /credit balance|RESOURCE_EXHAUSTED/i.test(text)) return 'quota';
+  if (/credit balance|RESOURCE_EXHAUSTED/i.test(text)) return 'quota';
   if (status === 404) return 'missing';
   if (status === 408 || status === 529 || status >= 500) return 'busy';
   return 'bad';
@@ -149,7 +150,10 @@ function failFrom(t, status, body) {
     busy: `${t.label} is busy right now.`,
     bad: `The request was rejected (${status}): ${msg || 'bad request'}`,
   }[kind];
-  return new Fail(kind, text, kind === 'quota' ? quotaWait(body) : 0);
+  const fail = new Fail(kind, text, kind === 'quota' ? quotaWait(body) : 0);
+  fail.keyId = t.keyId; fail.keyName = t.keyName;
+  fail.detail = `HTTP ${status}${msg ? ': ' + msg.replace(/\s+/g, ' ').slice(0, 300) : ''}`;   // what the provider said: for the log only, never shown in the chat
+  return fail;
 }
 
 const whyFailed = (e) => e?.cause?.code || e?.code || e?.message || 'unknown error';
@@ -256,10 +260,25 @@ async function claudeStream(t, messages, signal, send) {
 // ---------- The reply: try the models one after another ----------
 const hasImages = (messages) => messages.some((m) => Array.isArray(m.content) && m.content.some((p) => p.type === 'image'));
 
+const PROVIDER_NAME = { gemini: 'Gemini', openai: 'OpenAI (GPT)', claude: 'Claude' };
+const RANK = ['auth', 'missing', 'bad', 'quota', 'busy', 'empty'];   // which problem to report for a provider that has several
+
 function finalMessage(fails) {
   const by = (k) => fails.find((f) => f.kind === k);
   if (fails.every((f) => f.kind === 'quota')) {
     return 'Every available model has reached its free limit for now (per-minute or per-day limits). Wait a minute and press Retry. Daily limits reset at midnight Pacific time. To get more room, add a second provider key (see .env.example).';
+  }
+  // One entry per provider (Gemini, OpenAI, Claude, ...): its most important problem.
+  const perProvider = new Map();
+  for (const f of fails) {
+    const id = f.keyId || f.message;
+    const cur = perProvider.get(id);
+    if (!cur || RANK.indexOf(f.kind) < RANK.indexOf(cur.kind)) perProvider.set(id, f);
+  }
+  if (perProvider.size > 1) {
+    const say = { auth: (n) => `key missing or invalid (check ${n})`, quota: () => 'limit reached or no credit left', missing: () => 'model name not found', busy: () => 'busy right now', empty: () => 'sent an empty reply', bad: () => 'request refused' };
+    const lines = [...perProvider.values()].map((f) => `${PROVIDER_NAME[f.keyId] || f.keyName || 'Backup provider'}: ${(say[f.kind] || say.bad)(f.keyName)}`);
+    return `No model could answer right now. ${lines.join(' · ')}. Fix the first problem or wait, then press Retry.`;
   }
   const f = by('auth') || by('missing') || by('busy') || by('empty') || fails[0];
   return f.kind === 'busy' ? 'The AI services are busy right now. Press Retry in a few seconds.' : f.message;
@@ -301,8 +320,9 @@ export async function streamAnswer(messages, signal, send) {
         if (signal.aborted) return;
         const dropped = !(e instanceof Fail);   // the connection itself failed (for example an idle connection that was closed)
         const f = dropped ? new Fail('busy', `Could not reach ${t.label} (${whyFailed(e)}). Check your internet connection, then press Retry.`) : e;
+        if (dropped) { f.keyId = t.keyId; f.keyName = t.keyName; f.detail = whyFailed(e); }
         if (sent) return send({ error: f.message });
-        console.warn(`[ai] ${t.label}: ${f.kind} - ${f.message}`);
+        console.warn(`[ai] ${t.label}: ${f.kind} - ${f.message}${f.detail ? ` [${f.detail}]` : ''}`);
         if (dropped && attempt + 1 < (more ? 2 : 3)) { await pause(attempt ? 1000 : 150, signal); continue; }
         if (!dropped && f.kind === 'busy' && !more && attempt + 1 < 3) { await pause(attempt ? 1500 : 500, signal); continue; }
         if (f.kind === 'bad') return send({ error: f.message });   // the request itself is wrong: another model will not help
