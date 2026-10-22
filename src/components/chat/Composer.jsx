@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Mic, Paperclip, Send, Square } from 'lucide-react';
-import  AttachmentCard from './AttachmetCard.jsx'
+import  AttachmentCard from './AttachedCard.jsx'
 import IconButton from '../ui/IconButtons.jsx';
 import { scrollbar } from '../../lib/Styles.js';
 import { cn } from '../../lib/Utils.js';
