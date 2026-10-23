@@ -88,11 +88,17 @@ function extraTargets() {
   return out;
 }
 
+// CLAUDE_EFFORT sets how long Claude thinks before it starts to write (low | medium | high | xhigh | max).
+// Claude Sonnet 5.5 thinks at "high" when nothing is sent, which delays the first word a lot, so the default here is "low":
+// simple questions are answered at once and hard ones still get thought through. Use medium/high when accuracy matters more than speed.
+// "default" sends nothing (the model's own setting). A model that does not accept the setting is used without it, automatically.
 function claudeTargets() {
   const key = env('ANTHROPIC_API_KEY');
   if (!key) return [];
   const model = env('MODEL') || 'claude-sonnet-5-5';
-  return [{ id: 'claude', label: `Claude ${model}`, kind: 'claude', model, key, keyId: 'claude', keyName: 'ANTHROPIC_API_KEY', vision: true }];
+  const e = env('CLAUDE_EFFORT', 'low').toLowerCase();
+  const effort = ['', 'default'].includes(e) ? '' : e;
+  return [{ id: 'claude', label: `Claude ${model}`, kind: 'claude', model, key, keyId: 'claude', keyName: 'ANTHROPIC_API_KEY', vision: true, effort, titleEffort: effort ? 'low' : '' }];
 }
 
 export function chain() {
@@ -245,12 +251,30 @@ async function claude(key) {   // loaded only when Claude is really used, which 
   return claudeClient;
 }
 
+// Runs `run(extra)` with the thinking level added to the request. If the model refuses that setting (a 400 that mentions it),
+// the call is repeated without it and this is remembered, the same way it is done for Gemini.
+async function withEffort(ekey, initial, signal, run) {
+  let effort = effortNow.has(ekey) ? effortNow.get(ekey) : initial;
+  for (;;) {
+    try {
+      return await run(effort ? { output_config: { effort } } : {});
+    } catch (e) {
+      if (!effort || signal.aborted || e?.status !== 400 || !/effort|output_config/i.test(String(e.message))) throw e;
+      console.warn(`[ai] ${ekey} does not accept thinking level "${effort}". Using its default.`);
+      effortNow.set(ekey, '');
+      effort = '';
+    }
+  }
+}
+
 async function claudeStream(t, messages, signal, send) {
   try {
-    const stream = (await claude(t.key)).messages.stream({ model: t.model, max_tokens: 8192, system: systemPrompt(), messages }, { signal });
-    stream.on('text', (x) => send({ text: x }));
-    const final = await stream.finalMessage();
-    send({ usage: final.usage });
+    await withEffort(t.id, t.effort, signal, async (extra) => {
+      const stream = (await claude(t.key)).messages.stream({ model: t.model, max_tokens: 8192, system: systemPrompt(), messages, ...extra }, { signal });
+      stream.on('text', (x) => send({ text: x }));
+      const final = await stream.finalMessage();
+      send({ usage: final.usage });
+    });
   } catch (e) {
     if (signal.aborted || !e?.status) throw e;
     throw failFrom(t, e.status, e.message);
@@ -367,7 +391,8 @@ async function openaiTitle(t, prompt, signal) {
 }
 
 async function claudeTitle(t, prompt, signal) {
-  const r = await (await claude(t.key)).messages.create({ model: t.model, max_tokens: 40, system: TITLE_RULES, messages: [{ role: 'user', content: prompt }] }, { signal });
+  // max_tokens leaves room for a little thinking; the title itself is a few words.
+  const r = await withEffort(`${t.id}:title`, t.titleEffort, signal, async (extra) => (await claude(t.key)).messages.create({ model: t.model, max_tokens: 200, system: TITLE_RULES, messages: [{ role: 'user', content: prompt }], ...extra }, { signal }));
   return r.content.map((b) => (b.type === 'text' ? b.text : '')).join('');
 }
 
