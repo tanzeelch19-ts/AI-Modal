@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 
-// Like useState, but the value is saved in localStorage under `key`.
+// Like useState, but the value is saved in localStorage under `key` (or in `store`, e.g. the guest-mode store from lib/storage.js).
 // Saving is delayed a little (debounced) so a streaming reply, which changes the value
 // many times per second, does not re-write all chats to storage on every update.
-export function useLocalStorage(key, init) {
+export function useLocalStorage(key, init, store) {
   const [v, setV] = useState(() => {
     try {
-      const s = localStorage.getItem(key);
+      const s = (store || localStorage).getItem(key);
       return s ? JSON.parse(s) : init;
     } catch {
       return init;
@@ -29,7 +29,7 @@ export function useLocalStorage(key, init) {
   }, [key]);
 
   function save() {
-    try { localStorage.setItem(key, JSON.stringify(latest.current)); } catch { /* storage full */ }
+    try { (store || localStorage).setItem(key, JSON.stringify(latest.current)); } catch { /* storage full */ }
   }
 
   return [v, setV];

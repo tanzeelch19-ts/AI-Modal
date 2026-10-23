@@ -10,7 +10,7 @@ const gap = (el) => el.scrollHeight - el.scrollTop - el.clientHeight;
 //   away       true when the user is far from the bottom (show the jump-to-bottom button)
 //   toBottom   scrolls down to the newest message
 //   stickNext  call it right before sending a message / opening a chat: the next update scrolls to the bottom whatever the position
-export function AutoScroll(ref, deps) {
+export function useAutoScroll(ref, deps) {
   const [away, setAway] = useState(false);
   const force = useRef(false);
 

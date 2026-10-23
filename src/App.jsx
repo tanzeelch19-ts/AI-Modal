@@ -4,13 +4,14 @@ import EmptyState from './components/chat/EmptyState.jsx';
 import MessageList from './components/chat/MessageList.jsx';
 import OfflineBanner from './components/layout/OfflineBanner.jsx';
 import SavedView from './components/views/SavedView.jsx';
+import { store } from './lib/storage.js';
 import Sidebar from './components/layout/sideBar.jsx';
 import ScrollToBottom from './components/ui/ScrollBottoms.jsx';
 import Toast from './components/ui/Toast.jsx';
 import TopBar from './components/layout/TopBar.jsx';
 import UsageView from './components/views/UsageView.jsx';
 import { useAttachments } from './hooks/useAttachments.js';
-import { AutoScroll } from './hooks/AutoScroll.js';
+import { useAutoScroll } from './hooks/AutoScroll.js';
 import { useChat } from './hooks/useChat.js';
 import { useLocalStorage } from './hooks/LocalStorage.js';
 import { useOnlineStatus } from './hooks/useOnlineStatus.js';
@@ -23,7 +24,7 @@ import { cn, copyText, speak } from './lib/Utils.js';
 
 export default function App() {
   const [theme, toggleTheme] = useTheme();
-  const [saved, setSaved] = useLocalStorage('devai:saved', []);
+  const [saved, setSaved] = useLocalStorage('devai:saved', [], store);
   const [view, setView] = useState('chat'); // 'chat' | 'saved' | 'usage'
   const [menu, setMenu] = useState(false);  // sidebar open on phones
   const [input, setInput] = useState('');
@@ -36,7 +37,7 @@ export default function App() {
   const { pending, addFiles, removeAt, clear } = useAttachments(toast);
   const { listening, toggleMic } = useVoiceInput({ input, setInput, toast });
 
-  const { away, toBottom, stickNext } = AutoScroll(listRef, [chat?.msgs, view]);
+  const { away, toBottom, stickNext } = useAutoScroll(listRef, [chat?.msgs, view]);
 
   const msgs = chat?.msgs || [];
 

@@ -1,9 +1,10 @@
-// Saves conversations in the browser (localStorage), the way ChatGPT keeps its history:
+// Saves conversations in the browser, the way ChatGPT keeps its history (localStorage; in guest mode sessionStorage, see storage.js):
 //   devai:index      -> [{ id, title, ts }]  the sidebar list. Small, so the app opens instantly.
 //   devai:chat:<id>  -> [messages]           one key per conversation, read only when you open it.
 //   devai:usage      -> { n, in, out }
 // Saving one chat never re-writes the others, so history stays fast even with hundreds of chats.
-import { quickTitle, uniqueTitle } from './chatTitles';
+import { quickTitle, uniqueTitle } from './chatTitles.js';
+import { store } from './storage.js';
 
 export const INDEX_KEY = 'devai:index';
 const CHAT = 'devai:chat:';
@@ -13,7 +14,7 @@ const OLD_CUR = 'devai:cur';
 
 function read(key, fallback) {
   try {
-    const s = localStorage.getItem(key);
+    const s = store.getItem(key);
     return s ? JSON.parse(s) : fallback;
   } catch {
     return fallback;
@@ -22,7 +23,7 @@ function read(key, fallback) {
 
 function write(key, value) {
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    store.setItem(key, JSON.stringify(value));
     return true;
   } catch {
     return false;   // storage full or blocked
@@ -30,7 +31,7 @@ function write(key, value) {
 }
 
 function drop(key) {
-  try { localStorage.removeItem(key); } catch { /* ignore */ }
+  try { store.removeItem(key); } catch { /* ignore */ }
 }
 
 const byTime = (a, b) => b.ts - a.ts;

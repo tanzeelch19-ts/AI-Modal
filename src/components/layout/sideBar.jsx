@@ -3,6 +3,7 @@ import { BarChart3, Bookmark, Plus, Sparkles, Trash2 } from 'lucide-react';
 import ConfirmDialog from '../ui/ConfirmDialo.jsx';
 import { cn } from '../../lib/Utils.js';
 import { brandGradient, clickable, scrollbar } from '../../lib/Styles.js';
+import { GUEST } from '../../lib/storage.js';
 
 const row = clickable + ' inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 transition-colors active:scale-[.96] pointer-coarse:min-h-10';
 const on = 'bg-panel text-ink';
@@ -17,7 +18,7 @@ function NavButton({ active, icon: Icon, children, ...props }) {
   );
 }
 
-export default function sideBar({ open, view, chats, cur, onClose, onNewChat, onOpenView, onOpenChat, onDeleteChat }) {
+export default function Sidebar({ open, view, chats, cur, onClose, onNewChat, onOpenView, onOpenChat, onDeleteChat }) {
   const [doomed, setDoomed] = useState(null);   // the chat waiting for the answer to "Delete this chat?"
 
   return (
@@ -73,6 +74,12 @@ export default function sideBar({ open, view, chats, cur, onClose, onNewChat, on
             );
           })}
         </div>
+
+        {GUEST && (
+          <p className="mt-auto px-1 pt-3 text-[.75rem] leading-snug text-mute">
+            Guest mode: your chats stay in this tab only and are erased when you close it.
+          </p>
+        )}
       </aside>
 
       <ConfirmDialog
